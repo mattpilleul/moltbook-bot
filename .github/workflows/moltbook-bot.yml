@@ -44,11 +44,3 @@ jobs:
           summaries/
           images/
         retention-days: 30
-        
-    - name: Commit and push if changed
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add summaries/latest*.md summaries/latest*.txt images/*.png || true
-        git commit -m "Update latest summary - $(date)" || true
-        git push
