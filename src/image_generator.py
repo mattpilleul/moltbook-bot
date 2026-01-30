@@ -100,9 +100,9 @@ class MoltbookImageGenerator:
             return None
     
     def _download_base_image(self) -> Optional[Image.Image]:
-        """Load the local base Moltbook OG image"""
+        """Load the local base Moltbook OG image or download if missing"""
         try:
-            # Use local OG image file
+            # Try local path first
             local_path = "/Users/vo2group/Downloads/moltbook/images/og-image.png"
             
             if os.path.exists(local_path):
@@ -111,12 +111,25 @@ class MoltbookImageGenerator:
                 # Cache in memory
                 self._base_image = img
                 return img
-            else:
-                print(f"❌ Local OG image not found at: {local_path}")
-                return None
+            
+            # If local doesn't exist, download from Moltbook
+            print("⬇️  Local OG image not found, downloading from Moltbook...")
+            url = "https://www.moltbook.com/opengraph-image"
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            
+            # Save to cache
+            os.makedirs("images", exist_ok=True)
+            img = Image.open(requests.get(url, stream=True).raw)
+            img.save(self._base_image_path, "PNG")
+            
+            # Cache in memory
+            self._base_image = img
+            print(f"✅ Downloaded and cached base image: {self._base_image_path}")
+            return img
             
         except Exception as e:
-            print(f"❌ Failed to load base image: {e}")
+            print(f"❌ Failed to load/download base image: {e}")
             return None
     
     def _prepare_title_lines(self, title: str) -> list:
