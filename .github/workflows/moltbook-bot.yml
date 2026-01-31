@@ -22,6 +22,13 @@ jobs:
       with:
         python-version: '3.11'
         
+    - name: Cache posted history
+      uses: actions/cache@v4
+      with:
+        path: data/posted_history.json
+        key: posted-history-v1
+        restore-keys: posted-history-v1
+        
     - name: Install dependencies
       run: |
         pip install -r requirements.txt
@@ -43,4 +50,5 @@ jobs:
         path: |
           summaries/
           images/
+          data/posted_history.json
         retention-days: 30

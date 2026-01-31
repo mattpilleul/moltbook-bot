@@ -12,6 +12,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from src.claude_generator import generate_viral_tweet_with_image
 from src.hybrid_scraper import scrape_moltbook
+from src.post_tracker import get_tracker
 from src.ranker import select_best_posts
 
 
@@ -40,9 +41,21 @@ def generate_summary():
     
     print(f"✅ Found {len(posts)} posts")
     
-    # Step 2: Rank posts
-    print(f"\n📊 Ranking posts by engagement potential...")
-    ranked_posts = select_best_posts(posts, limit=1)
+    # Step 2: Get post tracker and filter unposted posts
+    print(f"\n📊 Checking for previously posted posts...")
+    tracker = get_tracker()
+    
+    # Get unposted posts
+    unposted_posts = tracker.get_unposted_posts(posts)
+    print(f"✅ Found {len(unposted_posts)} unposted posts out of {len(posts)} total")
+    
+    if not unposted_posts:
+        print("⚠️  No new unposted posts found!")
+        return None
+    
+    # Step 3: Rank unposted posts
+    print(f"\n📊 Ranking unposted posts by engagement potential...")
+    ranked_posts = select_best_posts(unposted_posts, limit=5)  # Get top 5 to have options
     
     # Step 3: Generate tweet for top post
     top_post = ranked_posts[0]
@@ -53,9 +66,14 @@ def generate_summary():
     
     if not tweet:
         print("❌ Failed to generate tweet!")
-        return
+        return None
     
-    # Step 4: Save summary
+    # Step 4: Mark post as posted
+    post_id = top_post.get('id', top_post.get('url', ''))
+    tracker.mark_posted(post_id, top_post)
+    print(f"✅ Marked post as posted: {post_id}")
+    
+    # Step 5: Save summary
     summary_file = summaries_dir / f"{date_str}.md"
     
     with open(summary_file, 'w', encoding='utf-8') as f:
